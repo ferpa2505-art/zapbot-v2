@@ -1,0 +1,35 @@
+name: ZapBot v2.0 - Gerar instalador
+ 
+"on":
+  push:
+    branches: [main]
+  workflow_dispatch:
+ 
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias
+        run: npm install --legacy-peer-deps
+      - name: Instalar electron-packager
+        run: npm install --save-dev electron@28 electron-packager --legacy-peer-deps
+      - name: Build
+        run: npx electron-packager . "ZapBot-v2" --platform=win32 --arch=x64 --out=release --overwrite --asar --ignore=release --ignore=.github --ignore=node_modules/.cache
+      - name: Zipar
+        run: Compress-Archive -Path release\ZapBot-v2-win32-x64\* -DestinationPath release\ZapBot-v2-Windows.zip
+        shell: pwsh
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.${{ github.run_number }}
+          name: ZapBot v2.0.${{ github.run_number }}
+          body: |
+            ZapBot v2.0 - Baixe o ZapBot-v2-Windows.zip e execute o ZapBot-v2.exe
+          files: release/ZapBot-v2-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+ 
