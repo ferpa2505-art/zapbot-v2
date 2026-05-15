@@ -7,7 +7,6 @@ const QRCode = require('qrcode')
 const pino   = require('pino')
 const fs     = require('fs')
 
-const { getFeriados }          = require('./feriados')
 const { getAgenda }            = require('./google-agenda')
 const { gerenciador }          = require('./atendentes')
 const { getBroadcast }         = require('./broadcast')
@@ -79,26 +78,11 @@ function gerarMenu(cfg, agendaOk, pers) {
   return linhas.join('\n')
 }
 
-async function gerarResposta(jid, texto, cfg, agenda, ia, pers, dataPath='') {
+async function gerarResposta(jid, texto, cfg, agenda, ia, pers) {
   const sessao   = getSessao(jid)
   sessao.msgs    = (sessao.msgs || 0) + 1
   const vars     = { nome: cfg.negocio?.nome, horario: cfg.negocio?.horario, endereco: cfg.negocio?.endereco, profissional: cfg.negocio?.responsavel }
   const agendaOk = agenda?.temCredenciais()
-
-  // Verifica feriado
-  const gerFer = getFeriados(dataPath || '')
-  const feriado = await gerFer.verificarHoje(cfg.negocio?.endereco || cfg.negocio?.nome || '')
-  const comportFeriado = cfg.negocio?.feriadoComportamento || 'seguir_horario'
-  if (feriado && sessao.etapa === 'inicio') {
-    if (comportFeriado === 'fechado' || comportFeriado === 'personalizado') {
-      const msgFer = cfg.negocio?.feriadoMsg || `Hoje é *${feriado.nome}* 🎉 Estamos em feriado! Retornaremos no próximo dia útil.`
-      return interpolar(msgFer, { ...vars, feriado: feriado.nome })
-    }
-    if (comportFeriado === 'bot_ativo') {
-      // Bot responde mas informa que empresa está fechada
-      sessao._avisoFeriado = feriado.nome
-    }
-  }
 
   if (!dentroDoHorarioChat(pers.horarioChat) && sessao.etapa === 'inicio') {
     return pers.horarioChat?.msgForaHorario || `Fora do horário de atendimento. Deixe sua mensagem!`
@@ -321,7 +305,7 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
       const delay = Math.min(700 + Math.random() * 800, (pers.tempoMaxResposta || 1) * 1000)
       await new Promise(r => setTimeout(r, delay))
 
-      const resposta = await gerarResposta(jid, texto, config, agenda, ia, pers, dataPath)
+      const resposta = await gerarResposta(jid, texto, config, agenda, ia, pers)
       if (resposta) await enviarResposta(sock, jid, resposta, pers, vozSvc)
     }
   })
