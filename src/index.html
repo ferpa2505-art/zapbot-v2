@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZapBot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f7f8fa;--sur:#fff;--brd:#e5e7eb;--txt:#111827;--mut:#6b7280;--hint:#9ca3af;
+  --grn:#16a34a;--grn-bg:#dcfce7;--grn-txt:#14532d;
+  --blu:#2563eb;--blu-bg:#dbeafe;--blu-txt:#1e3a8a;
+  --red:#dc2626;--red-bg:#fee2e2;--red-txt:#7f1d1d;
+  --amb:#d97706;--amb-bg:#fef3c7;--amb-txt:#78350f;
+  --pur:#7c3aed;--pur-bg:#ede9fe;--pur-txt:#4c1d95;
+  --r:10px;--wpp:#25D366;--mda-opacity:0.06;--mda-url:none}
+
+/* TEMA ESCURO */
+[data-tema="escuro"]{
+  --bg:#0f172a;--sur:#1e293b;--brd:#334155;--txt:#f1f5f9;
+  --mut:#94a3b8;--hint:#475569;
+  --grn-bg:#14532d;--grn-txt:#86efac;
+  --blu-bg:#1e3a8a;--blu-txt:#93c5fd;
+  --red-bg:#7f1d1d;--red-txt:#fca5a5;
+  --amb-bg:#78350f;--amb-txt:#fcd34d;
+  --pur-bg:#4c1d95;--pur-txt:#c4b5fd}
+
+/* MARCA D'ÁGUA */
+.content::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:var(--mda-url);background-repeat:no-repeat;
+  background-position:center;background-size:contain;opacity:var(--mda-opacity)}
+.content>*{position:relative;z-index:1}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+.topbar{background:var(--sur);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 18px;height:52px;gap:10px;flex-shrink:0}
+.logo{font-weight:700;font-size:17px;color:var(--wpp)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--hint)}
+.sdot.on{background:var(--wpp)}
+.stxt{font-size:12px;color:var(--mut)}
+.lic-badge{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:500}
+.lic-beta{background:var(--amb-bg);color:var(--amb-txt)}
+.lic-ok{background:var(--grn-bg);color:var(--grn-txt)}
+.lic-exp{background:var(--red-bg);color:var(--red-txt)}
+.btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.btn-wpp{background:var(--wpp);color:#fff}.btn-wpp:hover{background:#1da851}
+.btn-red{background:var(--red-bg);color:var(--red-txt)}.btn-red:hover{background:#fecaca}
+.btn-out{background:var(--sur);border:1px solid var(--brd);color:var(--txt)}.btn-out:hover{background:var(--bg)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:195px;background:var(--sur);border-right:1px solid var(--brd);padding:12px 8px;display:flex;flex-direction:column;gap:1px;flex-shrink:0;overflow-y:auto}
+.nav-grp{font-size:10px;font-weight:600;color:var(--hint);letter-spacing:.5px;padding:10px 8px 4px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--mut);transition:all .12s}
+.nav-item:hover{background:var(--bg);color:var(--txt)}
+.nav-item.active{background:#dcfce7;color:var(--grn-txt)}
+.nav-item i{font-size:15px;flex-shrink:0}
+
+.content{flex:1;overflow-y:auto;padding:20px}
+.panel{display:none}.panel.active{display:block}
+.stitle{font-size:17px;font-weight:600;margin-bottom:3px}
+.ssub{font-size:12px;color:var(--mut);margin-bottom:18px}
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.ctitle{font-size:13px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.csub{font-size:11px;color:var(--mut);margin-bottom:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg{margin-bottom:12px}
+label.lbl{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:4px}
+input[type=text],input[type=password],input[type=email],input[type=number],input[type=time],select,textarea{width:100%;padding:7px 10px;border:1px solid var(--brd);border-radius:7px;font-size:13px;background:var(--sur);color:var(--txt);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--wpp)}
+textarea{resize:vertical;min-height:64px;font-family:inherit}
+input[type=range]{width:100%}
+
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--brd)}
+.tog-row:last-child{border-bottom:none}
+.tog-info{font-size:12px;font-weight:500}
+.tog-sub{font-size:11px;color:var(--mut);margin-top:2px}
+.tog{position:relative;width:36px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:#d1d5db;border-radius:20px;cursor:pointer;transition:.2s}
+.tog-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.tog input:checked+.tog-sl{background:var(--wpp)}
+.tog input:checked+.tog-sl:before{transform:translateX(14px)}
+
+.seg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.seg-card{border:1.5px solid var(--brd);border-radius:var(--r);padding:12px 8px;cursor:pointer;text-align:center;transition:all .15s}
+.seg-card:hover{border-color:var(--wpp);background:#f0fdf4}
+.seg-card.sel{border-color:var(--wpp);background:#f0fdf4}
+.seg-ico{font-size:22px;margin-bottom:5px}
+.seg-nm{font-size:12px;font-weight:600}
+.seg-ds{font-size:10px;color:var(--mut);margin-top:2px}
+
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;font-weight:500}
+.b-grn{background:var(--grn-bg);color:var(--grn-txt)}
+.b-blu{background:var(--blu-bg);color:var(--blu-txt)}
+.b-amb{background:var(--amb-bg);color:var(--amb-txt)}
+.b-red{background:var(--red-bg);color:var(--red-txt)}
+.b-pur{background:var(--pur-bg);color:var(--pur-txt)}
+
+.tom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.tom-card{border:1.5px solid var(--brd);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s}
+.tom-card:hover{border-color:var(--wpp)}
+.tom-card.sel{border-color:var(--wpp);background:#f0fdf4}
+.tom-nome{font-size:12px;font-weight:600;margin-bottom:2px}
+.tom-ex{font-size:10px;color:var(--mut);font-style:italic}
+
+.preview-msg{background:#dcfce7;border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:12px;color:#166534;max-width:80%;margin-top:8px;white-space:pre-wrap;line-height:1.5}
+.preview-wrap{background:var(--bg);border-radius:var(--r);padding:12px;margin-top:8px}
+.preview-label{font-size:10px;color:var(--mut);margin-bottom:6px;font-weight:600}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:14px}
+.stat-val{font-size:22px;font-weight:700}
+.stat-lbl{font-size:11px;color:var(--mut);margin-top:2px}
+
+.chat-list{border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;max-height:300px;overflow-y:auto}
+.chat-item{padding:10px 14px;border-bottom:1px solid var(--brd);display:flex;flex-direction:column;gap:2px}
+.chat-item:last-child{border-bottom:none}
+.chat-jid{font-size:11px;font-weight:600}
+.chat-txt{font-size:12px;color:var(--txt)}
+.chat-hora{font-size:10px;color:var(--hint);align-self:flex-end}
+
+.save-bar{display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid var(--brd);margin-top:6px}
+.toast{position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:9px 16px;border-radius:8px;font-size:12px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+.lic-box{border:1.5px solid var(--brd);border-radius:var(--r);padding:18px;text-align:center;margin-bottom:14px}
+.lic-icon{font-size:36px;margin-bottom:10px}
+.lic-titulo{font-size:15px;font-weight:600;margin-bottom:4px}
+.lic-desc{font-size:12px;color:var(--mut);margin-bottom:16px}
+.lic-prog{height:6px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.lic-fill{height:100%;background:var(--wpp);border-radius:4px;transition:width .5s}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--sur);border-radius:14px;padding:28px;max-width:320px;width:100%;text-align:center}
+.modal h2{font-size:16px;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--mut);margin-bottom:16px;line-height:1.5}
+#qr-img{width:200px;height:200px;border:1px solid var(--brd);border-radius:8px;display:block;margin:0 auto 16px}
+.qr-steps{text-align:left;font-size:11px;color:var(--mut);line-height:1.9;margin-bottom:14px}
+
+.var-hint{font-size:10px;color:var(--hint);margin-top:4px}
+.divider{height:1px;background:var(--brd);margin:4px 0}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🤖 ZapBot</div>
+  <div class="topbar-right">
+    <button class="btn btn-out" id="btn-tema" onclick="toggleTema()" title="Alternar tema" style="padding:6px 10px;font-size:16px">🌙</button>
+    <span class="lic-badge lic-beta" id="lic-badge">Carregando...</span>
+    <div class="sdot" id="sdot"></div>
+    <div class="stxt" id="stxt">Desconectado</div>
+    <button class="btn btn-wpp" id="btn-con" onclick="conectar()">🔗 Conectar</button>
+    <button class="btn btn-red" id="btn-des" style="display:none" onclick="desconectar()">⏹ Parar</button>
+    <button class="btn btn-out" onclick="salvarTudo()">💾 Salvar</button>
+  </div>
+</div>
+
+<div class="layout">
+<aside class="sidebar">
+  <div class="nav-grp">Configuração</div>
+  <div class="nav-item active" onclick="show('negocio',this)"><i class="ti ti-building"></i>Meu negócio</div>
+  <div class="nav-item" onclick="show('agente',this)"><i class="ti ti-robot"></i>Agente</div>
+  <div class="nav-item" onclick="show('voz',this)"><i class="ti ti-microphone"></i>Voz & idioma</div>
+  <div class="nav-item" onclick="show('horarios',this)"><i class="ti ti-clock"></i>Horários</div>
+  <div class="nav-item" onclick="show('fluxo',this)"><i class="ti ti-route"></i>Fluxo</div>
+  <div class="nav-item" onclick="show('mensagens',this)"><i class="ti ti-message"></i>Mensagens</div>
+  <div class="nav-grp">Recursos</div>
+  <div class="nav-item" onclick="show('ia',this)"><i class="ti ti-brain"></i>IA & análise</div>
+  <div class="nav-item" onclick="show('posatend',this)"><i class="ti ti-check"></i>Pós-atend.</div>
+  <div class="nav-item" onclick="show('problemas',this)"><i class="ti ti-alert-triangle"></i>Problemas</div>
+  <div class="nav-item" onclick="show('agenda',this)"><i class="ti ti-calendar"></i>Google Agenda</div>
+  <div class="nav-item" onclick="show('broadcast',this)"><i class="ti ti-speakerphone"></i>Broadcast</div>
+  <div class="nav-grp">Sistema</div>
+  <div class="nav-item" onclick="show('aparencia',this)"><i class="ti ti-palette"></i>Aparência</div>
+  <div class="nav-item" onclick="show('licenca',this)"><i class="ti ti-key"></i>Licença</div>
+  <div class="nav-item" onclick="show('monitor',this)"><i class="ti ti-device-desktop"></i>Monitor</div>
+</aside>
+
+<main class="content">
+
+<!-- NEGÓCIO -->
+<div class="panel active" id="panel-negocio">
+  <div class="stitle">Meu negócio</div>
+  <div class="ssub">Dados básicos do estabelecimento.</div>
+  <div class="card">
+    <div class="ctitle">Tipo de negócio</div>
+    <div class="csub">O bot adapta jargões, fluxo e linguagem ao segmento selecionado.</div>
+    <div class="seg-grid">
+      <div class="seg-card sel" data-tipo="medico" onclick="selSeg(this)"><div class="seg-ico">🩺</div><div class="seg-nm">Clínica médica</div><div class="seg-ds">Consultas, exames</div></div>
+      <div class="seg-card" data-tipo="dentista" onclick="selSeg(this)"><div class="seg-ico">🦷</div><div class="seg-nm">Odontologia</div><div class="seg-ds">Agendamentos</div></div>
+      <div class="seg-card" data-tipo="advogado" onclick="selSeg(this)"><div class="seg-ico">⚖️</div><div class="seg-nm">Advocacia</div><div class="seg-ds">Consultas jurídicas</div></div>
+      <div class="seg-card" data-tipo="psico" onclick="selSeg(this)"><div class="seg-ico">🧠</div><div class="seg-nm">Psicologia</div><div class="seg-ds">Sessões, triagem</div></div>
+      <div class="seg-card" data-tipo="imobiliaria" onclick="selSeg(this)"><div class="seg-ico">🏠</div><div class="seg-nm">Imobiliária</div><div class="seg-ds">Imóveis, visitas</div></div>
+      <div class="seg-card" data-tipo="loja" onclick="selSeg(this)"><div class="seg-ico">🛍️</div><div class="seg-nm">Loja / Comércio</div><div class="seg-ds">Vendas, suporte</div></div>
+      <div class="seg-card" data-tipo="restaurante" onclick="selSeg(this)"><div class="seg-ico">🍽️</div><div class="seg-nm">Restaurante</div><div class="seg-ds">Reservas, cardápio</div></div>
+      <div class="seg-card" data-tipo="salao" onclick="selSeg(this)"><div class="seg-ico">✂️</div><div class="seg-nm">Salão / Estética</div><div class="seg-ds">Horários</div></div>
+      <div class="seg-card" data-tipo="farmacia" onclick="selSeg(this)"><div class="seg-ico">💊</div><div class="seg-nm">Farmácia</div><div class="seg-ds">Medicamentos</div></div>
+      <div class="seg-card" data-tipo="academia" onclick="selSeg(this)"><div class="seg-ico">🏋️</div><div class="seg-nm">Academia</div><div class="seg-ds">Matrículas, planos</div></div>
+      <div class="seg-card" data-tipo="escola" onclick="selSeg(this)"><div class="seg-ico">🎓</div><div class="seg-nm">Escola / Curso</div><div class="seg-ds">Matrículas, turmas</div></div>
+      <div class="seg-card" data-tipo="custom" onclick="selSeg(this)"><div class="seg-ico">⚙️</div><div class="seg-nm">Personalizado</div><div class="seg-ds">Configure do zero</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Dados do negócio</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Nome do estabelecimento</label><input type="text" id="f-nome" placeholder="Ex: Clínica Saúde Total"></div>
+      <div class="fg"><label class="lbl">Responsável / Profissional</label><input type="text" id="f-resp" placeholder="Ex: Dr. Carlos Silva"></div>
+      <div class="fg"><label class="lbl">Endereço</label><input type="text" id="f-end" placeholder="Ex: Rua das Flores, 100 – Ribeirão Preto"></div>
+      <div class="fg"><label class="lbl">Site / Instagram</label><input type="text" id="f-site" placeholder="Ex: @clinicasaude ou www.clinica.com.br"></div>
+    </div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- AGENTE -->
+<div class="panel" id="panel-agente">
+  <div class="stitle">Configuração do agente</div>
+  <div class="ssub">Nome, personalidade e comportamento do bot.</div>
+  <div class="card">
+    <div class="ctitle">Identidade</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Nome do agente</label><input type="text" id="p-nome" placeholder="Ex: Sofia, Max, Assistente..." oninput="prevMsg()"></div>
+      <div class="fg"><label class="lbl">Apresentar-se como</label><input type="text" id="p-apres" placeholder="Ex: assistente virtual, atendente..."></div>
+    </div>
+    <div class="fg"><label class="lbl">Assinatura / rodapé das mensagens</label><input type="text" id="p-rodape" placeholder="Ex: Atendimento ZapBot 🤖 | Nome Empresa"></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Tom de conversa</div>
+    <div class="csub">Define o estilo de linguagem do agente.</div>
+    <div class="tom-grid">
+      <div class="tom-card sel" data-tom="profissional" onclick="selTom(this)"><div class="tom-nome">Profissional</div><div class="tom-ex">"Como posso ajudá-lo?"</div></div>
+      <div class="tom-card" data-tom="casual" onclick="selTom(this)"><div class="tom-nome">Casual</div><div class="tom-ex">"Oi! Me conta o que precisa 😊"</div></div>
+      <div class="tom-card" data-tom="tecnico" onclick="selTom(this)"><div class="tom-nome">Técnico</div><div class="tom-ex">"Poderia especificar a ocorrência?"</div></div>
+      <div class="tom-card" data-tom="descolado" onclick="selTom(this)"><div class="tom-nome">Descolado</div><div class="tom-ex">"Eee chegou! 🔥 Me fala!"</div></div>
+      <div class="tom-card" data-tom="acolhedor" onclick="selTom(this)"><div class="tom-nome">Acolhedor</div><div class="tom-ex">"Fico feliz que entrou em contato 💚"</div></div>
+      <div class="tom-card" data-tom="formal" onclick="selTom(this)"><div class="tom-nome">Formal</div><div class="tom-ex">"Em que posso ser útil ao senhor?"</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Jargões e vocabulário</div>
+    <div class="tog-row"><div><div class="tog-info">Usar jargões do segmento automaticamente</div><div class="tog-sub">Termos técnicos do tipo de negócio selecionado</div></div><label class="tog"><input type="checkbox" id="p-jarg" checked><span class="tog-sl"></span></label></div>
+    <div class="fg" style="margin-top:10px"><label class="lbl">Termos extras (separados por vírgula)</label><input type="text" id="p-jarg-custom" placeholder="Ex: protocolo, triagem, orçamento express..."></div>
+    <div class="fg"><label class="lbl">Palavras bloqueadas (assuntos fora do escopo)</label><input type="text" id="p-bloq" placeholder="Ex: política, concorrente, futebol..."></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Comportamento</div>
+    <div class="tog-row"><div><div class="tog-info">Revelar que é uma IA se perguntado</div><div class="tog-sub">Se desativado, nunca confirma ser bot</div></div><label class="tog"><input type="checkbox" id="p-rev"><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Usar IA (Claude) para respostas livres</div><div class="tog-sub">Responde perguntas fora do fluxo usando inteligência artificial</div></div><label class="tog"><input type="checkbox" id="p-ia"><span class="tog-sl"></span></label></div>
+    <div class="g2" style="margin-top:10px">
+      <div class="fg"><label class="lbl">Escalar após N mensagens sem resolução</label><input type="number" id="p-esc-lim" value="10" min="3" max="50"></div>
+      <div class="fg"><label class="lbl">Delay de resposta (segundos)</label><input type="number" id="p-delay" value="1" min="0" max="5" step="0.5"></div>
+    </div>
+    <div class="preview-wrap">
+      <div class="preview-label">Prévia da saudação</div>
+      <div class="preview-msg" id="prev-msg">Olá! 👋 Sou Assistente, da nossa empresa. Como posso ajudar?</div>
+    </div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- VOZ & IDIOMA -->
+<div class="panel" id="panel-voz">
+  <div class="stitle">Voz & idioma</div>
+  <div class="ssub">Configure como o agente fala — texto, voz ou os dois.</div>
+  <div class="card">
+    <div class="ctitle">Modo de resposta</div>
+    <div class="g3" style="margin-bottom:14px">
+      <div class="tom-card sel" data-modo="texto" onclick="selModo(this)"><div class="tom-nome">💬 Somente texto</div><div class="tom-ex">Responde por escrito</div></div>
+      <div class="tom-card" data-modo="voz" onclick="selModo(this)"><div class="tom-nome">🎙️ Somente voz</div><div class="tom-ex">Envia mensagens de voz</div></div>
+      <div class="tom-card" data-modo="ambos" onclick="selModo(this)"><div class="tom-nome">💬🎙️ Texto + voz</div><div class="tom-ex">Envia texto e áudio juntos</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Configuração de voz (Google TTS)</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Gênero da voz</label>
+        <select id="v-genero">
+          <option value="feminino">Feminino</option>
+          <option value="masculino">Masculino</option>
+        </select>
+      </div>
+      <div class="fg"><label class="lbl">Velocidade de fala</label>
+        <select id="v-vel">
+          <option value="0.8">Lenta</option>
+          <option value="1.0" selected>Normal</option>
+          <option value="1.2">Rápida</option>
+          <option value="1.4">Muito rápida</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="lbl">Chave da API Google TTS (obrigatória para voz)</label>
+      <input type="password" id="v-api" placeholder="AIza...">
+      <div class="var-hint">Obtenha em: console.cloud.google.com → Cloud Text-to-Speech API</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Sotaque / região</div>
+    <div class="csub">Ajusta entonação e ritmo conforme o estado ou região.</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Sotaque</label>
+        <select id="v-sotaque">
+          <optgroup label="Regiões">
+            <option value="sudeste">Sudeste (padrão)</option>
+            <option value="sul">Sul</option>
+            <option value="nordeste">Nordeste</option>
+            <option value="norte">Norte</option>
+            <option value="centro-oeste">Centro-Oeste</option>
+          </optgroup>
+          <optgroup label="Estados">
+            <option value="sp">São Paulo</option>
+            <option value="rj">Rio de Janeiro</option>
+            <option value="mg">Minas Gerais</option>
+            <option value="rs">Rio Grande do Sul</option>
+            <option value="sc">Santa Catarina</option>
+            <option value="pr">Paraná</option>
+            <option value="ba">Bahia</option>
+            <option value="pe">Pernambuco</option>
+            <option value="ce">Ceará</option>
+            <option value="go">Goiás</option>
+            <option value="df">Brasília/DF</option>
+            <option value="am">Amazonas</option>
+          </optgroup>
+          <optgroup label="Internacional">
+            <option value="portugal">Português (Portugal)</option>
+            <option value="en">Inglês (EUA)</option>
+            <option value="es">Espanhol</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fg"><label class="lbl">Idioma das mensagens de texto</label>
+        <select id="v-idioma">
+          <option value="pt-BR">Português (Brasil)</option>
+          <option value="pt-PT">Português (Portugal)</option>
+          <option value="en-US">Inglês</option>
+          <option value="es-ES">Espanhol</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="save-bar"><button class="btn btn-out" onclick="testarVoz()">🔊 Testar voz</button><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- HORÁRIOS -->
+<div class="panel" id="panel-horarios">
+  <div class="stitle">Horários</div>
+  <div class="ssub">Configure dia a dia o horário da empresa e quando o chatbot responde.</div>
+
+  <!-- HORÁRIO DA EMPRESA -->
+  <div class="card">
+    <div class="ctitle"><i class="ti ti-building" style="font-size:15px"></i> Horário da empresa</div>
+    <div class="csub">Exibido nas mensagens de informação para o cliente. Deixe em branco os dias fechados.</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px 0;width:110px">Dia</th>
+        <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px">Abertura</th>
+        <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px">Fechamento</th>
+        <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 4px 8px">Fechado</th>
+      </tr></thead>
+      <tbody id="emp-dias-tbody"></tbody>
+    </table>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--brd)">
+      <div class="ctitle" style="margin-bottom:8px">🗓 Feriados automáticos</div>
+      <div class="csub" style="margin-bottom:12px">O bot busca os feriados nacionais, estaduais e municipais automaticamente pela cidade configurada em "Meu negócio".</div>
+      <div class="g2" style="margin-bottom:10px">
+        <div>
+          <label class="lbl">Comportamento nos feriados</label>
+          <select id="h-fer-comportamento">
+            <option value="seguir_horario">Seguir horário configurado</option>
+            <option value="fechado">Considerar sempre fechado</option>
+            <option value="bot_ativo">Bot ativo, empresa fechada</option>
+            <option value="personalizado">Mensagem personalizada</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Observação adicional sobre feriados</label>
+          <input type="text" id="h-emp-fer" placeholder="Ex: Atendimentos apenas de urgência">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Mensagem nos feriados (quando fechado)</label>
+        <textarea id="h-fer-msg" rows="2" placeholder="Ex: Hoje é feriado! Retornaremos {proximo_dia_util}. Urgências: {telefone}"></textarea>
+        <div style="font-size:10px;color:var(--hint);margin-top:3px">Variáveis: {feriado} {proximo_dia_util} {horario} {nome} {telefone}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;margin-top:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600">Feriados detectados este ano</div>
+          <button class="btn btn-out" style="font-size:11px;padding:4px 10px" onclick="carregarFeriados()">🔄 Atualizar</button>
+        </div>
+        <div id="fer-lista" style="font-size:11px;color:var(--mut)">Clique em Atualizar para buscar os feriados da sua cidade.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HORÁRIO DO CHATBOT -->
+  <div class="card">
+    <div class="ctitle"><i class="ti ti-robot" style="font-size:15px"></i> Horário do chatbot</div>
+    <div class="csub">Quando o bot responde automaticamente — pode ser diferente do horário da empresa.</div>
+    <div class="tog-row" style="margin-bottom:12px"><div><div class="tog-info">Chatbot ativo 24 horas</div><div class="tog-sub">Responde a qualquer hora, inclusive madrugada e feriados</div></div><label class="tog"><input type="checkbox" id="h-bot-full" onchange="toggleHorBot()"><span class="tog-sl"></span></label></div>
+    <div id="h-bot-form">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px 0;width:110px">Dia</th>
+          <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px">Início</th>
+          <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 8px 8px">Fim</th>
+          <th style="text-align:left;font-size:11px;font-weight:600;color:var(--mut);padding:4px 4px 8px">Inativo</th>
+        </tr></thead>
+        <tbody id="bot-dias-tbody"></tbody>
+      </table>
+      <div class="fg" style="margin-top:12px"><label class="lbl">Mensagem fora do horário do bot</label><textarea id="h-bot-msg">Nosso atendimento automático está pausado agora. Deixe sua mensagem e retornaremos assim que possível!</textarea></div>
+    </div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- FLUXO -->
+<div class="panel" id="panel-fluxo">
+  <div class="stitle">Fluxo de atendimento</div>
+  <div class="ssub">O que o bot oferece e como escala para humanos.</div>
+  <div class="card">
+    <div class="ctitle">Menu principal</div>
+    <div class="tog-row"><div><div class="tog-info">Agendar</div></div><label class="tog"><input type="checkbox" id="m-ag" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Cancelar / remarcar</div></div><label class="tog"><input type="checkbox" id="m-ca" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Informações</div></div><label class="tog"><input type="checkbox" id="m-in" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Falar com atendente</div></div><label class="tog"><input type="checkbox" id="m-es" checked><span class="tog-sl"></span></label></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Comportamento</div>
+    <div class="tog-row"><div><div class="tog-info">Responder fora do horário da empresa</div></div><label class="tog"><input type="checkbox" id="h-fora" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Escalar para humano quando necessário</div></div><label class="tog"><input type="checkbox" id="h-esc" checked><span class="tog-sl"></span></label></div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- MENSAGENS -->
+<div class="panel" id="panel-mensagens">
+  <div class="stitle">Mensagens</div>
+  <div class="ssub">Edite os textos. Variáveis: {nome} {data} {hora} {horario} {endereco} {profissional}</div>
+  <div class="card"><div class="ctitle">Boas-vindas</div><textarea id="msg-bv" rows="5"></textarea></div>
+  <div class="g2">
+    <div class="card"><div class="ctitle">Confirmação</div><textarea id="msg-conf" rows="4"></textarea></div>
+    <div class="card"><div class="ctitle">Fora do horário</div><textarea id="msg-fora" rows="4"></textarea></div>
+    <div class="card"><div class="ctitle">Escalada</div><textarea id="msg-esc" rows="4"></textarea></div>
+    <div class="card"><div class="ctitle">Cancelamento</div><textarea id="msg-canc" rows="4"></textarea></div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- IA & ANÁLISE -->
+<div class="panel" id="panel-ia">
+  <div class="stitle">IA & análise de mídia</div>
+  <div class="ssub">Configure a inteligência artificial e a análise de imagens e PDFs.</div>
+  <div class="card">
+    <div class="ctitle">API Claude (Anthropic)</div>
+    <div class="csub">Necessária para análise de imagens, PDFs e respostas inteligentes.</div>
+    <div class="fg"><label class="lbl">Chave da API</label><input type="password" id="ia-key" placeholder="sk-ant-..."><div class="var-hint">Obtenha em: console.anthropic.com</div></div>
+    <div class="g2" style="margin-top:8px">
+      <div class="tog-row"><div><div class="tog-info">Analisar imagens recebidas</div></div><label class="tog"><input type="checkbox" id="ia-img" checked><span class="tog-sl"></span></label></div>
+      <div class="tog-row"><div><div class="tog-info">Analisar PDFs recebidos</div></div><label class="tog"><input type="checkbox" id="ia-pdf" checked><span class="tog-sl"></span></label></div>
+    </div>
+    <div class="fg" style="margin-top:10px"><label class="lbl">Mensagem enquanto analisa</label><input type="text" id="ia-wait" placeholder="🔍 Analisando, aguarde um momento..."></div>
+    <div class="fg"><label class="lbl">Contexto de conversa para IA (últimas N mensagens)</label><input type="number" id="ia-ctx" value="10" min="3" max="30"></div>
+  </div>
+  <div class="save-bar"><button class="btn btn-out" onclick="testarIA()">🧪 Testar conexão IA</button><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- PÓS-ATENDIMENTO -->
+<div class="panel" id="panel-posatend">
+  <div class="stitle">Pós-atendimento</div>
+  <div class="ssub">Lembretes automáticos, pesquisa de satisfação e reengajamento.</div>
+  <div class="g3">
+    <div class="card"><div class="ctitle">Satisfação</div>
+      <div class="tog-row"><div><div class="tog-info">Ativar pesquisa</div></div><label class="tog"><input type="checkbox" id="pa-pesq" checked><span class="tog-sl"></span></label></div>
+      <div class="fg" style="margin-top:10px"><label class="lbl">Enviar após</label><select id="pa-ap"><option value="2h">2 horas</option><option value="24h">24 horas</option><option value="48h">48 horas</option></select></div>
+    </div>
+    <div class="card"><div class="ctitle">Lembretes</div>
+      <div class="tog-row"><div><div class="tog-info">24h antes</div></div><label class="tog"><input type="checkbox" id="pa-l24" checked><span class="tog-sl"></span></label></div>
+      <div class="tog-row"><div><div class="tog-info">2h antes</div></div><label class="tog"><input type="checkbox" id="pa-l2" checked><span class="tog-sl"></span></label></div>
+      <div class="tog-row"><div><div class="tog-info">Pedir confirmação</div></div><label class="tog"><input type="checkbox" id="pa-lconf" checked><span class="tog-sl"></span></label></div>
+    </div>
+    <div class="card"><div class="ctitle">Reengajamento</div>
+      <div class="tog-row"><div><div class="tog-info">Reativar inativo</div></div><label class="tog"><input type="checkbox" id="pa-reeng" checked><span class="tog-sl"></span></label></div>
+      <div class="fg" style="margin-top:10px"><label class="lbl">Após inatividade</label><select id="pa-ri"><option value="3meses">3 meses</option><option value="6meses">6 meses</option><option value="1ano">1 ano</option></select></div>
+    </div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- PROBLEMAS -->
+<div class="panel" id="panel-problemas">
+  <div class="stitle">Resolução de problemas</div>
+  <div class="ssub">O bot detecta e age automaticamente em situações críticas.</div>
+  <div class="card">
+    <div class="tog-row"><div><div class="tog-info">Cancelamento automático <span class="badge b-grn">Auto</span></div></div><label class="tog"><input type="checkbox" id="pr-ca" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Reclamação de atendimento <span class="badge b-amb">Escalada</span></div></div><label class="tog"><input type="checkbox" id="pr-re" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Dúvida sobre cobrança <span class="badge b-blu">Semi-auto</span></div></div><label class="tog"><input type="checkbox" id="pr-co" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Resultado / documento <span class="badge b-grn">Auto</span></div></div><label class="tog"><input type="checkbox" id="pr-re2" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Emergência / urgência <span class="badge b-red">Prioridade</span></div></div><label class="tog"><input type="checkbox" id="pr-em" checked><span class="tog-sl"></span></label></div>
+    <div class="tog-row"><div><div class="tog-info">Atraso do profissional <span class="badge b-grn">Auto</span></div></div><label class="tog"><input type="checkbox" id="pr-at"><span class="tog-sl"></span></label></div>
+  </div>
+  <div class="save-bar"><button class="btn btn-wpp" onclick="salvarTudo()">Salvar</button></div>
+</div>
+
+<!-- GOOGLE AGENDA -->
+<div class="panel" id="panel-agenda">
+  <div class="stitle">Google Agenda</div>
+  <div class="ssub">Integração com Google Calendar — verifica e cria eventos automaticamente.</div>
+  <div class="card">
+    <div class="fg"><label class="lbl">Client ID (Google Cloud)</label><input type="text" id="ga-id" placeholder="XXXXXX.apps.googleusercontent.com"></div>
+    <div class="fg"><label class="lbl">Client Secret</label><input type="password" id="ga-sec" placeholder="GOCSPX-..."><div class="var-hint">Crie em: console.cloud.google.com → APIs → Credenciais → OAuth 2.0</div></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-out" onclick="salvarGoogleCreds()">Salvar credenciais</button>
+      <button class="btn btn-wpp" onclick="autorizarGoogle()">🔗 Autorizar com Google</button>
+    </div>
+    <div id="ga-status" style="font-size:12px;color:var(--mut);margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- BROADCAST -->
+<div class="panel" id="panel-broadcast">
+  <div class="stitle">Broadcast</div>
+  <div class="ssub">Envie mensagens em massa para grupos segmentados de contatos.</div>
+  <div class="card"><div class="ctitle">Nova campanha</div>
+    <div class="fg"><label class="lbl">Nome da campanha</label><input type="text" id="bc-nome"></div>
+    <div class="fg"><label class="lbl">Mensagem (use {nome} para personalizar)</label><textarea id="bc-msg"></textarea></div>
+    <div class="fg"><label class="lbl">Tags dos destinatários (vazio = todos)</label><input type="text" id="bc-tags" placeholder="Ex: pacientes, clientes-vip"></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-wpp" onclick="criarCampanha(false)">▶ Enviar agora</button><button class="btn btn-out" onclick="criarCampanha(true)">🕐 Agendar</button></div>
+  </div>
+</div>
+
+<!-- LICENÇA -->
+<div class="panel" id="panel-aparencia">
+  <div class="stitle">Aparência</div>
+  <div class="ssub">Personalize o visual do painel conforme sua preferência.</div>
+
+  <div class="card">
+    <div class="ctitle">🌓 Tema da interface</div>
+    <div class="csub">Escolha entre fundo claro ou escuro.</div>
+    <div style="display:flex;gap:10px">
+      <div class="tema-card" id="tc-claro" onclick="setTema('claro')" style="flex:1;border:2px solid var(--wpp);border-radius:10px;padding:16px;cursor:pointer;text-align:center;background:#f7f8fa">
+        <div style="font-size:28px;margin-bottom:6px">☀️</div>
+        <div style="font-size:13px;font-weight:600;color:#111">Claro</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Fundo branco</div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#25D366;margin:8px auto 0;display:none" id="tc-claro-check">✓</div>
+      </div>
+      <div class="tema-card" id="tc-escuro" onclick="setTema('escuro')" style="flex:1;border:2px solid var(--brd);border-radius:10px;padding:16px;cursor:pointer;text-align:center;background:#1e293b">
+        <div style="font-size:28px;margin-bottom:6px">🌙</div>
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9">Escuro</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px">Fundo escuro</div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#25D366;margin:8px auto 0;display:none" id="tc-escuro-check">✓</div>
+      </div>
+      <div class="tema-card" id="tc-auto" onclick="setTema('auto')" style="flex:1;border:2px solid var(--brd);border-radius:10px;padding:16px;cursor:pointer;text-align:center">
+        <div style="font-size:28px;margin-bottom:6px">🖥️</div>
+        <div style="font-size:13px;font-weight:600">Automático</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:2px">Segue o sistema</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🖼️ Marca d'água</div>
+    <div class="csub">Exibe uma imagem (logo da empresa) como fundo sutil do painel.</div>
+    <div class="tog-row">
+      <div><div class="tog-info">Ativar marca d'água</div><div class="tog-sub">Exibe a imagem como fundo com transparência</div></div>
+      <label class="tog"><input type="checkbox" id="mda-ativa" onchange="toggleMarcaDagua()"><span class="tog-sl"></span></label>
+    </div>
+    <div id="mda-config" style="margin-top:14px;display:none">
+      <div class="g2" style="margin-bottom:12px">
+        <div class="fg">
+          <label class="lbl">Opacidade</label>
+          <input type="range" id="mda-opacity" min="1" max="30" value="6" oninput="aplicarMarcaDagua()">
+          <div style="font-size:11px;color:var(--mut);margin-top:3px">Atual: <span id="mda-opacity-val">6</span>%</div>
+        </div>
+        <div class="fg">
+          <label class="lbl">Tamanho</label>
+          <select id="mda-size" onchange="aplicarMarcaDagua()">
+            <option value="20%">Pequeno</option>
+            <option value="35%" selected>Médio</option>
+            <option value="55%">Grande</option>
+            <option value="80%">Muito grande</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Imagem da marca d'água</label>
+        <input type="file" id="mda-file" accept="image/*" onchange="carregarMarcaDagua(this)" style="display:none">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-out" onclick="document.getElementById('mda-file').click()">📁 Selecionar imagem</button>
+          <button class="btn btn-out" onclick="removerMarcaDagua()" id="mda-remover" style="display:none">🗑️ Remover</button>
+          <span id="mda-nome" style="font-size:12px;color:var(--mut)">Nenhuma imagem selecionada</span>
+        </div>
+      </div>
+      <div id="mda-preview-wrap" style="display:none;margin-top:10px">
+        <label class="lbl">Prévia</label>
+        <div style="background:var(--bg);border:1px solid var(--brd);border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative">
+          <img id="mda-preview" style="max-height:100%;max-width:100%;object-fit:contain" src="">
+          <div style="position:absolute;inset:0;background:var(--bg);opacity:0" id="mda-overlay"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🎨 Cor de destaque</div>
+    <div class="csub">Cor principal dos botões e seleções.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="cor-opt" data-cor="#25D366" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#25D366;cursor:pointer;border:3px solid #25D366;outline:2px solid white;outline-offset:-5px" title="Verde WhatsApp"></div>
+      <div class="cor-opt" data-cor="#2563eb" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#2563eb;cursor:pointer;border:3px solid transparent" title="Azul"></div>
+      <div class="cor-opt" data-cor="#7c3aed" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#7c3aed;cursor:pointer;border:3px solid transparent" title="Roxo"></div>
+      <div class="cor-opt" data-cor="#dc2626" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#dc2626;cursor:pointer;border:3px solid transparent" title="Vermelho"></div>
+      <div class="cor-opt" data-cor="#d97706" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#d97706;cursor:pointer;border:3px solid transparent" title="Âmbar"></div>
+      <div class="cor-opt" data-cor="#0891b2" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#0891b2;cursor:pointer;border:3px solid transparent" title="Ciano"></div>
+      <div class="cor-opt" data-cor="#be185d" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#be185d;cursor:pointer;border:3px solid transparent" title="Rosa"></div>
+      <div class="cor-opt" data-cor="#475569" onclick="setCor(this)" style="width:32px;height:32px;border-radius:50%;background:#475569;cursor:pointer;border:3px solid transparent" title="Cinza"></div>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <button class="btn btn-wpp" onclick="salvarAparencia()">Salvar aparência</button>
+  </div>
+</div>
+
+<div class="panel" id="panel-licenca">
+  <div class="stitle">Licença</div>
+  <div class="ssub">Gerencie seu período de acesso ao ZapBot.</div>
+  <div class="lic-box" id="lic-box">
+    <div class="lic-icon">🔑</div>
+    <div class="lic-titulo" id="lic-titulo">Verificando licença...</div>
+    <div class="lic-desc" id="lic-desc"></div>
+    <div class="lic-prog"><div class="lic-fill" id="lic-fill" style="width:0%"></div></div>
+    <div style="font-size:11px;color:var(--mut)" id="lic-dias"></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Iniciar período beta (7 dias grátis)</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Seu e-mail</label><input type="email" id="lic-email" placeholder="seu@email.com"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-wpp" onclick="iniciarBeta()" style="width:100%">Ativar 7 dias grátis</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Ativar licença paga</div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">Chave de licença</label><input type="text" id="lic-chave" placeholder="ZAPBOT-XXXX-XXXX-XXXX"></div>
+      <div class="fg"><label class="lbl">E-mail da compra</label><input type="email" id="lic-email2" placeholder="email@usado.na.compra.com"></div>
+    </div>
+    <button class="btn btn-wpp" onclick="ativarLicenca()">Ativar licença</button>
+    <div style="margin-top:12px;font-size:12px;color:var(--mut)">Adquira sua licença em: <a href="https://zapbot.com.br" style="color:var(--wpp)">zapbot.com.br</a></div>
+  </div>
+</div>
+
+<!-- MONITOR -->
+<div class="panel" id="panel-monitor">
+  <div class="stitle">Monitor ao vivo</div>
+  <div class="ssub">Conversas em tempo real e estatísticas do bot.</div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-val" id="st-t">0</div><div class="stat-lbl">Mensagens hoje</div></div>
+    <div class="stat"><div class="stat-val" id="st-a">0</div><div class="stat-lbl">Agendamentos</div></div>
+    <div class="stat"><div class="stat-val" id="st-c">0</div><div class="stat-lbl">Cancelamentos</div></div>
+    <div class="stat"><div class="stat-val" id="st-e">0</div><div class="stat-lbl">Escaladas</div></div>
+  </div>
+  <div class="card"><div class="ctitle">Conversas recentes</div><div class="chat-list" id="chat-list"><div style="padding:24px;text-align:center;color:var(--hint);font-size:12px">Conecte o WhatsApp para ver conversas aqui.</div></div></div>
+  <div style="margin-top:8px;font-size:12px;color:var(--mut)" id="web-url"></div>
+</div>
+
+</main>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-bg" id="modal-qr">
+  <div class="modal">
+    <h2>📱 Conectar WhatsApp</h2>
+    <p>Abra o WhatsApp → <strong>Dispositivos conectados</strong> → <strong>Conectar dispositivo</strong> → escaneie o QR Code.</p>
+    <img id="qr-img" src="" alt="QR Code">
+    <div class="qr-steps">1. Abra o WhatsApp no celular<br>2. Toque nos 3 pontos → Dispositivos conectados<br>3. Toque em Conectar dispositivo<br>4. Aponte a câmera para o QR Code</div>
+    <button class="btn btn-out" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cfg = {}, stats = {t:0,a:0,c:0,e:0}
+
+// ── APARÊNCIA ─────────────────────────────────────────────────────────────────
+const APARENCIA_KEY = 'zapbot_aparencia'
+
+function loadAparencia() {
+  try { return JSON.parse(localStorage.getItem(APARENCIA_KEY) || '{}') } catch { return {} }
+}
+
+function saveAparencia(ap) {
+  localStorage.setItem(APARENCIA_KEY, JSON.stringify(ap))
+}
+
+function aplicarTema(tema) {
+  const html = document.documentElement
+  if (tema === 'auto') {
+    const prefEscuro = window.matchMedia('(prefers-color-scheme: dark)').matches
+    html.setAttribute('data-tema', prefEscuro ? 'escuro' : 'claro')
+  } else {
+    html.setAttribute('data-tema', tema || 'claro')
+  }
+  const escuro = html.getAttribute('data-tema') === 'escuro'
+  const btn = document.getElementById('btn-tema')
+  if (btn) btn.textContent = escuro ? '☀️' : '🌙'
+
+  // Atualizar visual dos cards de tema
+  const temas = ['claro','escuro','auto']
+  temas.forEach(t => {
+    const card = document.getElementById('tc-'+t)
+    if (!card) return
+    card.style.borderColor = (tema === t || (tema === 'auto' && t === 'auto')) ? 'var(--wpp)' : 'var(--brd)'
+  })
+}
+
+function setTema(tema) {
+  const ap = loadAparencia(); ap.tema = tema; saveAparencia(ap)
+  aplicarTema(tema)
+}
+
+function toggleTema() {
+  const ap = loadAparencia()
+  const atual = document.documentElement.getAttribute('data-tema')
+  const novo  = atual === 'escuro' ? 'claro' : 'escuro'
+  ap.tema = novo; saveAparencia(ap); aplicarTema(novo)
+}
+
+function setCor(el) {
+  const cor = el.dataset.cor
+  document.documentElement.style.setProperty('--wpp', cor)
+  document.querySelectorAll('.cor-opt').forEach(c => {
+    c.style.border = c.dataset.cor === cor ? `3px solid ${cor}` : '3px solid transparent'
+  })
+  const ap = loadAparencia(); ap.cor = cor; saveAparencia(ap)
+}
+
+// ── MARCA D'ÁGUA ──────────────────────────────────────────────────────────────
+function toggleMarcaDagua() {
+  const ativa = document.getElementById('mda-ativa')?.checked
+  const conf  = document.getElementById('mda-config')
+  if (conf) conf.style.display = ativa ? 'block' : 'none'
+  if (!ativa) {
+    document.documentElement.style.setProperty('--mda-url', 'none')
+    const ap = loadAparencia(); ap.mdaAtiva = false; saveAparencia(ap)
+  } else aplicarMarcaDagua()
+}
+
+function carregarMarcaDagua(input) {
+  const file = input.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    const base64 = e.target.result
+    document.getElementById('mda-nome').textContent = file.name
+    document.getElementById('mda-remover').style.display = ''
+    const prev = document.getElementById('mda-preview')
+    const wrap = document.getElementById('mda-preview-wrap')
+    if (prev) { prev.src = base64; wrap.style.display = '' }
+    const ap = loadAparencia(); ap.mdaImg = base64; ap.mdaAtiva = true; saveAparencia(ap)
+    aplicarMarcaDagua()
+  }
+  reader.readAsDataURL(file)
+}
+
+function aplicarMarcaDagua() {
+  const ap     = loadAparencia()
+  const ativa  = document.getElementById('mda-ativa')?.checked
+  const opEl   = document.getElementById('mda-opacity')
+  const szEl   = document.getElementById('mda-size')
+  const valEl  = document.getElementById('mda-opacity-val')
+  const op     = opEl?.value || ap.mdaOpacity || 6
+  const sz     = szEl?.value || ap.mdaSize   || '35%'
+  if (valEl) valEl.textContent = op
+
+  if (ativa && ap.mdaImg) {
+    document.documentElement.style.setProperty('--mda-opacity', op/100)
+    document.documentElement.style.setProperty('--mda-url', `url("${ap.mdaImg}")`)
+    document.documentElement.style.setProperty('--mda-size', sz)
+    document.querySelector('.content')?.style.setProperty('background-size', sz)
+  } else {
+    document.documentElement.style.setProperty('--mda-url', 'none')
+  }
+  const apNovo = loadAparencia(); apNovo.mdaOpacity = parseInt(op); apNovo.mdaSize = sz; saveAparencia(apNovo)
+}
+
+function removerMarcaDagua() {
+  document.getElementById('mda-nome').textContent = 'Nenhuma imagem selecionada'
+  document.getElementById('mda-remover').style.display = 'none'
+  document.getElementById('mda-preview-wrap').style.display = 'none'
+  document.getElementById('mda-file').value = ''
+  document.documentElement.style.setProperty('--mda-url', 'none')
+  const ap = loadAparencia(); delete ap.mdaImg; ap.mdaAtiva = false; saveAparencia(ap)
+}
+
+function salvarAparencia() {
+  const ap = loadAparencia()
+  ap.mdaAtiva  = document.getElementById('mda-ativa')?.checked
+  ap.mdaOpacity = parseInt(document.getElementById('mda-opacity')?.value || 6)
+  ap.mdaSize    = document.getElementById('mda-size')?.value || '35%'
+  saveAparencia(ap)
+  toast('✅ Aparência salva!')
+}
+
+function restaurarAparencia() {
+  const ap = loadAparencia()
+  if (ap.tema) aplicarTema(ap.tema)
+  if (ap.cor)  { document.documentElement.style.setProperty('--wpp', ap.cor); document.querySelectorAll('.cor-opt').forEach(c => { c.style.border = c.dataset.cor === ap.cor ? `3px solid ${ap.cor}` : '3px solid transparent' }) }
+  if (ap.mdaAtiva && ap.mdaImg) {
+    const ch = document.getElementById('mda-ativa'); if (ch) ch.checked = true
+    const conf = document.getElementById('mda-config'); if (conf) conf.style.display = 'block'
+    const opEl = document.getElementById('mda-opacity'); if (opEl) opEl.value = ap.mdaOpacity || 6
+    const szEl = document.getElementById('mda-size');   if (szEl) szEl.value = ap.mdaSize   || '35%'
+    const valEl= document.getElementById('mda-opacity-val'); if (valEl) valEl.textContent = ap.mdaOpacity || 6
+    const prev = document.getElementById('mda-preview'); const wrap = document.getElementById('mda-preview-wrap')
+    if (prev) { prev.src = ap.mdaImg; wrap.style.display = '' }
+    document.getElementById('mda-remover').style.display = ''
+    document.getElementById('mda-nome').textContent = 'Imagem carregada'
+    aplicarMarcaDagua()
+  }
+}
+
+// Detectar tema do sistema automaticamente
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  const ap = loadAparencia(); if (ap.tema === 'auto') aplicarTema('auto')
+})
+
+async function carregarFeriados() {
+  const lista = document.getElementById('fer-lista')
+  if (!lista) return
+  lista.innerHTML = '<span style="color:var(--mut)">🔍 Buscando feriados...</span>'
+  try {
+    const cidade = g('f-end') || g('f-nome') || ''
+    const r = await window.zapbot.buscarFeriados(cidade)
+    if (r && r.feriados && r.feriados.length) {
+      const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+      const ufTxt = r.uf ? ` + feriados de ${r.uf}` : ''
+      const fonteTxt = r.fonte === 'BrasilAPI' ? '(via BrasilAPI)' : '(modo offline)'
+      lista.innerHTML = `<div style="margin-bottom:6px;font-size:10px;color:var(--hint)">📍 ${r.cidade||'Brasil'} ${ufTxt} ${fonteTxt}</div>` +
+        r.feriados.map(f => `<span style="display:inline-block;background:var(--sur);border:0.5px solid var(--brd);border-radius:5px;padding:2px 8px;margin:2px;font-size:11px">📅 ${String(f.dia).padStart(2,'0')}/${String(f.mes).padStart(2,'0')} – ${f.nome}</span>`).join('')
+    } else {
+      lista.innerHTML = '<span style="color:var(--red)">Não foi possível carregar. Verifique sua conexão.</span>'
+    }
+  } catch(e) {
+    lista.innerHTML = '<span style="color:var(--red)">Erro ao buscar feriados: ' + e.message + '</span>'
+  }
+}
+
+async function init() {
+  restaurarAparencia()
+  buildTabelaDias()
+  cfg = await window.zapbot.loadConfig()
+  aplicar(cfg)
+  setupListeners()
+  carregarLicenca()
+  verificarGoogleStatus()
+}
+
+function aplicar(c) {
+  const n = c.negocio || {}
+  val('f-nome', n.nome); val('f-resp', n.responsavel); val('f-end', n.endereco); val('f-site', n.site)
+  document.querySelectorAll('.seg-card').forEach(e => e.classList.toggle('sel', e.dataset.tipo === n.tipo))
+
+  const p = c.personalidade || {}
+  val('p-nome', p.nomeAgente); val('p-apres', p.apresentarSeComo); val('p-rodape', p.rodape)
+  val('p-jarg-custom', (p.jargoesCuston||[]).join(', ')); val('p-bloq', (p.palavrasBloqueadas||[]).join(', '))
+  chk('p-jarg', p.jargoesPadrao !== false); chk('p-rev', p.revelarQueEhIA); chk('p-ia', p.usarIAParaRespostas)
+  val('p-esc-lim', p.limiteMsgAntesEscalar || 10); val('p-delay', p.tempoMaxResposta || 1)
+  document.querySelectorAll('.tom-card').forEach(e => e.classList.toggle('sel', e.dataset.tom === (p.tom||'profissional')))
+
+  val('v-api', p.chaveGoogleTTS || c.chaveGoogleTTS)
+  sel('v-genero', p.generoVoz || 'feminino')
+  sel('v-vel', String(p.velocidadeVoz || '1.0'))
+  sel('v-sotaque', p.sotaque || 'sp')
+  sel('v-idioma', p.idioma || 'pt-BR')
+  document.querySelectorAll('[data-modo]').forEach(e => e.classList.toggle('sel', e.dataset.modo === (p.modoResposta||'texto')))
+
+  chk('h-bot-full', c.horarios?.modoFull24h)
+  val('h-bot-msg', (p.horarioChat||{}).msgForaHorario)
+  val('h-emp-fer', n.horarioFer)
+  sel('h-fer-comportamento', n.feriadoComportamento||'seguir_horario')
+  val('h-fer-msg', n.feriadoMsg)
+  aplicarHorariosDias('emp', n.horariosDias)
+  aplicarHorariosDias('bot', (p.horarioChat||{}).dias)
+  toggleHorBot()
+
+  const m = c.menu || {}
+  chk('m-ag',m.agendar!==false); chk('m-ca',m.cancelar!==false); chk('m-in',m.informacoes!==false); chk('m-es',m.escalada!==false)
+  chk('h-fora', c.horarios?.responderForaHorario !== false); chk('h-esc', c.horarios?.escalarParaHumano !== false)
+
+  const msg = c.mensagens || {}
+  val('msg-bv', msg.boasVindas); val('msg-conf', msg.confirmacao); val('msg-fora', msg.foradeHorario)
+  val('msg-esc', msg.escalada); val('msg-canc', msg.cancelamento)
+
+  val('ia-key', p.chaveClaudeAPI || c.chaveClaudeAPI)
+  chk('ia-img', p.analisarImagens !== false); chk('ia-pdf', p.analisarPDFs !== false)
+  val('ia-wait', p.msgAguardandoAnalise); val('ia-ctx', p.contextWindowIA || 10)
+
+  const pa = c.posAtendimento || {}
+  chk('pa-pesq', pa.pesquisaSatisfacao); sel('pa-ap', pa.pesquisaApos||'2h')
+  chk('pa-l24', pa.lembrete24h); chk('pa-l2', pa.lembrete2h); chk('pa-lconf', pa.pedirConfirmacao)
+  chk('pa-reeng', pa.reengajamento); sel('pa-ri', pa.reengajamentoApos||'3meses')
+
+  const pr = c.problemas || {}
+  chk('pr-ca',pr.cancelamentoAuto); chk('pr-re',pr.reclamacaoEscalada); chk('pr-co',pr.duvidasCobranca)
+  chk('pr-re2',pr.reenviarResultado); chk('pr-em',pr.emergencia); chk('pr-at',pr.atrasoAuto)
+
+  val('ga-id', c.googleAgenda?.clientId); val('ga-sec', '')
+  prevMsg()
+}
+
+function coletar() {
+  const tipo = document.querySelector('.seg-card.sel')?.dataset.tipo || 'custom'
+  const tom  = document.querySelector('.tom-card.sel')?.dataset.tom || 'profissional'
+  const modo = document.querySelector('[data-modo].sel')?.dataset.modo || 'texto'
+  return {
+    negocio: { nome:g('f-nome'), tipo, responsavel:g('f-resp'), endereco:g('f-end'), site:g('f-site'),
+      horarioFer:g('h-emp-fer'), horariosDias:coletarHorariosDias('emp'),
+      feriadoComportamento:g('h-fer-comportamento'), feriadoMsg:g('h-fer-msg') },
+    personalidade: {
+      nomeAgente:g('p-nome'), apresentarSeComo:g('p-apres'), rodape:g('p-rodape'), tom, modoResposta:modo,
+      generoVoz:g('v-genero'), sotaque:g('v-sotaque'), velocidadeVoz:parseFloat(g('v-vel')||'1'), idioma:g('v-idioma'),
+      chaveGoogleTTS:g('v-api'), chaveClaudeAPI:g('ia-key'),
+      jargoesPadrao:ck('p-jarg'), jargoesCuston:g('p-jarg-custom').split(',').map(s=>s.trim()).filter(Boolean),
+      palavrasBloqueadas:g('p-bloq').split(',').map(s=>s.trim()).filter(Boolean),
+      revelarQueEhIA:ck('p-rev'), usarIAParaRespostas:ck('p-ia'),
+      limiteMsgAntesEscalar:parseInt(g('p-esc-lim')||'10'), tempoMaxResposta:parseFloat(g('p-delay')||'1'),
+      analisarImagens:ck('ia-img'), analisarPDFs:ck('ia-pdf'), msgAguardandoAnalise:g('ia-wait'), contextWindowIA:parseInt(g('ia-ctx')||'10'),
+      horarioChat:{ ativo:!ck('h-bot-full'), dias:coletarHorariosDias('bot'), msgForaHorario:g('h-bot-msg') }
+    },
+    menu:{ agendar:ck('m-ag'), cancelar:ck('m-ca'), informacoes:ck('m-in'), escalada:ck('m-es') },
+    horarios:{ responderForaHorario:ck('h-fora'), modoFull24h:ck('h-bot-full'), escalarParaHumano:ck('h-esc') },
+    mensagens:{ boasVindas:g('msg-bv'), confirmacao:g('msg-conf'), foradeHorario:g('msg-fora'), escalada:g('msg-esc'), cancelamento:g('msg-canc') },
+    posAtendimento:{ pesquisaSatisfacao:ck('pa-pesq'), pesquisaApos:g('pa-ap'), lembrete24h:ck('pa-l24'), lembrete2h:ck('pa-l2'), pedirConfirmacao:ck('pa-lconf'), reengajamento:ck('pa-reeng'), reengajamentoApos:g('pa-ri') },
+    problemas:{ cancelamentoAuto:ck('pr-ca'), reclamacaoEscalada:ck('pr-re'), duvidasCobranca:ck('pr-co'), reenviarResultado:ck('pr-re2'), emergencia:ck('pr-em'), atrasoAuto:ck('pr-at') },
+    googleAgenda:{ clientId:g('ga-id'), ativo:!!g('ga-id') },
+    senhaWeb: cfg.senhaWeb || '1234'
+  }
+}
+
+async function salvarTudo() { cfg=coletar(); await window.zapbot.saveConfig(cfg); toast('✅ Salvo!') }
+async function conectar() { await salvarTudo(); document.getElementById('modal-qr').classList.add('show'); document.getElementById('qr-img').src=''; const r=await window.zapbot.startBot(); if(!r.ok){fecharModal();toast('❌ '+r.msg)} }
+function fecharModal() { document.getElementById('modal-qr').classList.remove('show') }
+async function desconectar() { await window.zapbot.stopBot(); setStatus(false,'Desconectado') }
+function setStatus(on,txt) {
+  document.getElementById('sdot').className='sdot'+(on?' on':'')
+  document.getElementById('stxt').textContent=txt
+  document.getElementById('btn-con').style.display=on?'none':''
+  document.getElementById('btn-des').style.display=on?'':'none'
+}
+
+function setupListeners() {
+  window.zapbot.removeAll()
+  window.zapbot.onQR(qr=>document.getElementById('qr-img').src=qr)
+  window.zapbot.onReady(num=>{fecharModal();setStatus(true,'Conectado: +'+num);toast('🟢 WhatsApp conectado!')})
+  window.zapbot.onMessage(m=>{stats.t++;if(/agend/i.test(m.texto))stats.a++;if(/cancel/i.test(m.texto))stats.c++;if(/atendente/i.test(m.texto))stats.e++;atualizarStats();addMsg(m)})
+  window.zapbot.onDisconnected(()=>{setStatus(false,'Desconectado');toast('🔴 Desconectado')})
+  window.zapbot.onWebInfo&&window.zapbot.onWebInfo(info=>{ document.getElementById('web-url').textContent=`📱 Painel pelo celular: http://${info.ip}:${info.porta}` })
+}
+
+function atualizarStats() { ['t','a','c','e'].forEach(k=>document.getElementById('st-'+k).textContent=stats[k]) }
+function addMsg(m) {
+  const l=document.getElementById('chat-list'), jid=(m.jid||'').replace('@s.whatsapp.net','')
+  const d=document.createElement('div'); d.className='chat-item'
+  d.innerHTML=`<div class="chat-jid">+${esc(jid)}</div><div class="chat-txt">${esc(m.texto)}</div><div class="chat-hora">${m.hora||''}</div>`
+  if(l.querySelector('div[style]'))l.innerHTML=''
+  l.insertBefore(d,l.firstChild)
+  if(l.children.length>50)l.removeChild(l.lastChild)
+}
+
+async function carregarLicenca() {
+  // Placeholder — licença real via ipcMain
+  const b=document.getElementById('lic-badge'), t=document.getElementById('lic-titulo'), d=document.getElementById('lic-desc'), f=document.getElementById('lic-fill'), dd=document.getElementById('lic-dias')
+  try {
+    const r = await window.zapbot.loadConfig()
+    if(!r) return
+    b.textContent='Sem licença'; b.className='lic-badge lic-exp'
+    t.textContent='Nenhuma licença ativa'; d.textContent='Inicie o período beta ou ative uma licença paga.'
+  } catch {}
+}
+
+async function iniciarBeta() {
+  const email=g('lic-email'); if(!email){toast('❌ Informe seu e-mail');return}
+  toast('⏳ Ativando beta...'); setTimeout(()=>toast('✅ 7 dias beta ativados!'),1500)
+}
+
+async function ativarLicenca() {
+  const chave=g('lic-chave'), email=g('lic-email2')
+  if(!chave||!email){toast('❌ Preencha chave e e-mail');return}
+  toast('⏳ Validando...'); setTimeout(()=>toast('✅ Licença ativada!'),1500)
+}
+
+async function salvarGoogleCreds() { const r=await window.zapbot.googleSaveCreds({clientId:g('ga-id'),clientSecret:g('ga-sec')}); toast(r.ok?'✅ Credenciais salvas':'❌ '+r.msg) }
+async function autorizarGoogle() { toast('🔗 Abrindo navegador para autorização...'); const r=await window.zapbot.googleAutorizar(); toast(r.ok?'✅ Google Agenda conectado!':'❌ '+r.msg) }
+async function verificarGoogleStatus() { try{const r=await window.zapbot.googleStatus(); document.getElementById('ga-status').textContent=r.temCredenciais?'✅ Google Agenda configurado':'⚠️ Não configurado'}catch{} }
+
+async function testarVoz() { toast('🔊 Enviando áudio de teste...') }
+async function testarIA()  { toast('🧪 Testando conexão com Claude...') }
+
+function prevMsg() {
+  const nome = g('p-nome')||'Assistente', empresa = g('f-nome')||'nossa empresa'
+  document.getElementById('prev-msg').textContent = `Olá! 👋 Sou ${nome}, assistente de ${empresa}.\n\nComo posso ajudar?`
+}
+
+function selSeg(el) { document.querySelectorAll('.seg-card').forEach(c=>c.classList.remove('sel')); el.classList.add('sel') }
+function selTom(el) { document.querySelectorAll('.tom-card[data-tom]').forEach(c=>c.classList.remove('sel')); el.classList.add('sel') }
+function selModo(el){ document.querySelectorAll('[data-modo]').forEach(c=>c.classList.remove('sel')); el.classList.add('sel') }
+function toggleHorBot() { document.getElementById('h-bot-form').style.display=ck('h-bot-full')?'none':'block' }
+
+const DIAS=[{id:'seg',nome:'Segunda-feira'},{id:'ter',nome:'Terça-feira'},{id:'qua',nome:'Quarta-feira'},
+  {id:'qui',nome:'Quinta-feira'},{id:'sex',nome:'Sexta-feira'},{id:'sab',nome:'Sábado'},{id:'dom',nome:'Domingo'}]
+
+function buildTabelaDias(){
+  const tbE=document.getElementById('emp-dias-tbody'), tbB=document.getElementById('bot-dias-tbody')
+  if(!tbE||!tbB)return
+  const defEI={seg:'08:00',ter:'08:00',qua:'08:00',qui:'08:00',sex:'08:00',sab:'08:00',dom:''}
+  const defEF={seg:'18:00',ter:'18:00',qua:'18:00',qui:'18:00',sex:'18:00',sab:'12:00',dom:''}
+  const defBI={seg:'08:00',ter:'08:00',qua:'08:00',qui:'08:00',sex:'08:00',sab:'09:00',dom:'09:00'}
+  const defBF={seg:'22:00',ter:'22:00',qua:'22:00',qui:'22:00',sex:'22:00',sab:'18:00',dom:'18:00'}
+  const row=(tipo,d,defI,defF,fechPad)=>`<tr style="border-bottom:0.5px solid var(--brd)">
+    <td style="padding:6px 8px 6px 0;font-size:12px;font-weight:500">${d.nome}</td>
+    <td style="padding:4px 8px"><input type="time" id="${tipo}-${d.id}-i" value="${defI[d.id]||''}" style="width:110px;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px"></td>
+    <td style="padding:4px 8px"><input type="time" id="${tipo}-${d.id}-f" value="${defF[d.id]||''}" style="width:110px;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px"></td>
+    <td style="padding:4px;text-align:center"><label class="tog"><input type="checkbox" id="${tipo}-${d.id}-fech" ${fechPad?'checked':''} onchange="toggleDiaFech('${tipo}','${d.id}')"><span class="tog-sl"></span></label></td>
+  </tr>`
+  tbE.innerHTML = DIAS.map(d=>row('emp',d,defEI,defEF,d.id==='dom')).join('')
+  tbB.innerHTML = DIAS.map(d=>row('bot',d,defBI,defBF,false)).join('')
+  DIAS.forEach(d=>{toggleDiaFech('emp',d.id);toggleDiaFech('bot',d.id)})
+}
+
+function toggleDiaFech(tipo,dia){
+  const fech=document.getElementById(`${tipo}-${dia}-fech`)
+  const i=document.getElementById(`${tipo}-${dia}-i`)
+  const f=document.getElementById(`${tipo}-${dia}-f`)
+  if(!i||!f)return
+  const fechado=fech?.checked
+  i.disabled=fechado; f.disabled=fechado
+  i.style.opacity=fechado?'.3':'1'; f.style.opacity=fechado?'.3':'1'
+}
+
+function coletarHorariosDias(tipo){
+  const dias={}
+  DIAS.forEach(d=>{
+    const fech=document.getElementById(`${tipo}-${d.id}-fech`)
+    const i=document.getElementById(`${tipo}-${d.id}-i`)
+    const f=document.getElementById(`${tipo}-${d.id}-f`)
+    dias[d.id]={ativo:!fech?.checked, inicio:i?.value||'', fim:f?.value||''}
+  })
+  return dias
+}
+
+function aplicarHorariosDias(tipo,dias){
+  if(!dias)return
+  DIAS.forEach(d=>{
+    const conf=dias[d.id]||{}
+    const fech=document.getElementById(`${tipo}-${d.id}-fech`)
+    const i=document.getElementById(`${tipo}-${d.id}-i`)
+    const f=document.getElementById(`${tipo}-${d.id}-f`)
+    if(fech)fech.checked=!conf.ativo
+    if(i)i.value=conf.inicio||''
+    if(f)f.value=conf.fim||''
+    toggleDiaFech(tipo,d.id)
+  })
+}
+
+function show(id,el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
+  document.getElementById('panel-'+id).classList.add('active'); el.classList.add('active')
+}
+
+async function criarCampanha(ag) {
+  const nome=g('bc-nome'),msg=g('bc-msg'),tags=g('bc-tags').split(',').map(s=>s.trim()).filter(Boolean)
+  if(!nome||!msg){toast('❌ Nome e mensagem obrigatórios');return}
+  let agendarPara=null
+  if(ag){const dt=prompt('Data e hora (ex: 2025-12-25T09:00):');if(!dt)return;agendarPara=new Date(dt).toISOString()}
+  toast('📢 Campanha criada!')
+}
+
+// helpers
+const g=id=>document.getElementById(id)?.value||''
+const val=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v}
+const chk=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=!!v}
+const ck=id=>document.getElementById(id)?.checked||false
+const sel=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v}
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+init()
+</script>
+</body>
+</html>
