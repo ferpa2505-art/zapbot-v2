@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Termo de Reconhecimento de Dívida</title>
+<style>
+  @page { size: A4; margin: 25mm 20mm; }
+  body {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #111;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 30px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 15pt;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .subtitulo {
+    text-align: center;
+    font-size: 10.5pt;
+    color: #444;
+    margin-bottom: 28px;
+  }
+  h2 {
+    font-size: 12.5pt;
+    margin-top: 26px;
+    margin-bottom: 8px;
+  }
+  p { text-align: justify; margin: 0 0 10px 0; }
+  ul { margin: 6px 0 12px 0; padding-left: 22px; }
+  li { margin-bottom: 4px; text-align: justify; }
+  .assinatura {
+    margin-top: 50px;
+    text-align: center;
+  }
+  .assinatura .linha {
+    margin-top: 40px;
+    border-top: 1px solid #111;
+    width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 6px;
+    font-size: 10.5pt;
+  }
+  .aceite-linha {
+    text-align: center;
+    font-weight: 700;
+    margin-top: 12px;
+  }
+  .separador {
+    margin-top: 32px;
+    border: none;
+    border-top: 1px solid #999;
+  }
+  .referencias {
+    font-size: 8.5pt;
+    color: #333;
+    margin-top: 14px;
+  }
+  .referencias p { margin: 0 0 6px 0; text-align: left; }
+  .header-brand {
+    background: #1f4d36;
+    color: #d9c47c;
+    text-align: center;
+    padding: 22px 20px;
+    margin: -30px -30px 30px -30px;
+  }
+  .header-brand .logo {
+    font-size: 22pt;
+    font-family: Georgia, serif;
+    letter-spacing: 1px;
+  }
+  .header-brand .tagline {
+    font-size: 9pt;
+    color: #f2ead0;
+    margin-top: 2px;
+  }
+  .footer-brand {
+    background: #1f4d36;
+    color: #f2ead0;
+    text-align: center;
+    font-size: 8pt;
+    padding: 14px 20px;
+    margin: 30px -30px -30px -30px;
+    line-height: 1.6;
+  }
+  strong { font-weight: 700; }
+</style>
+</head>
+<body>
+
+  <div class="header-brand">
+    <div class="logo">VerdiLabs</div>
+    <div class="tagline">Autocuidado com padrão profissional</div>
+  </div>
+
+  <h1>Termo de Reconhecimento de Dívida<br>e Declaração de Veracidade</h1>
+  <div class="subtitulo">(Com aceite digital via WhatsApp)</div>
+
+  <h2>1. IDENTIFICAÇÃO DAS PARTES</h2>
+  <p><strong>CREDORA:</strong></p>
+  <p>
+    VERDILABS COMÉRCIO E DISTRIBUIÇÃO DE SUPLEMENTOS E COSMÉTICOS LTDA,
+    inscrita no CNPJ nº 65.653.378/0001-30, com sede na PC MAJ. MARCELINO
+    AMÂNCIO DE MOURA, nº 23, Centro, Paraibuna - SP, CEP 12.260-015.
+  </p>
+
+  <p><strong>DEVEDOR(A) / DECLARANTE:</strong></p>
+  <p>
+    Eu, <strong>{{nome_devedor}}</strong>, inscrito(a) no CPF/MF nº
+    <strong>{{cpf_devedor}}</strong>, residente no endereço
+    <strong>{{endereco_rua}}, nº {{endereco_numero}}{{#if endereco_complemento}}, {{endereco_complemento}}{{/if}}</strong>,
+    Bairro <strong>{{bairro}}</strong>, Cidade <strong>{{cidade}}</strong>,
+    Estado <strong>{{estado}}</strong>, CEP <strong>{{cep}}</strong>,
+    telefone/WhatsApp nº <strong>{{whatsapp}}</strong>, declaro que sou
+    maior de 18 anos e plenamente capaz para os atos da vida civil.
+  </p>
+
+  <h2>2. OBJETO</h2>
+  <p>
+    O(A) DEVEDOR(A) declara que realizou, de forma livre e espontânea, o
+    pedido de <strong>{{produto_kit}}</strong>, no valor total de
+    <strong>R$ {{valor}}</strong> ({{valor_por_extenso}}), na modalidade
+    de venda pós-paga (pagamento após a entrega), junto à CREDORA acima
+    identificada.
+  </p>
+
+  <h2>3. DECLARAÇÃO DE VERACIDADE</h2>
+  <p>
+    Declaro, para fins de direito, que todas as informações pessoais e
+    documentos fornecidos para a realização desta compra são
+    <strong>verdadeiros e autênticos</strong>. Estou ciente de que a
+    prestação de informações falsas ou o uso de dados de terceiros sem
+    autorização pode configurar o crime de <strong>falsidade ideológica</strong>
+    (art. 299 do Código Penal), sujeito à pena de reclusão de 1 (um) a 3
+    (três) anos, e multa.
+  </p>
+
+  <h2>4. COMPROMISSO DE PAGAMENTO</h2>
+  <p>
+    Comprometo-me a efetuar o pagamento do(s) produto(s) adquirido(s) no
+    prazo máximo de <strong>3 (três) dias corridos</strong> contados a
+    partir da data de entrega do produto pelo serviço de transporte,
+    podendo optar por uma das seguintes formas de pagamento:
+  </p>
+  <ul>
+    <li><strong>Pagamento à vista</strong> – via PIX ou boleto bancário;</li>
+    <li><strong>Pagamento parcelado</strong> – via cartão de crédito, nas condições disponibilizadas pela CREDORA.</li>
+  </ul>
+  <p>
+    No caso de pagamento parcelado no cartão de crédito, o pagamento será
+    considerado realizado no momento da aprovação da transação pela
+    operadora do cartão. As parcelas decorrentes do parcelamento são de
+    responsabilidade exclusiva do(a) DEVEDOR(A) junto à administradora do
+    cartão de crédito, não eximindo a obrigação aqui assumida em caso de
+    cancelamento ou estorno da transação.
+  </p>
+
+  <h2>5. RESERVA DE DOMÍNIO</h2>
+  <p>
+    Declaro estar ciente de que, nos termos dos arts. 521 a 528 do Código
+    Civil, a propriedade do produto permanece com a VERDILABS até a
+    confirmação do pagamento integral. Até o efetivo pagamento, tenho
+    apenas a posse direta do bem, não podendo aliená-lo, cedê-lo ou dispor
+    dele de qualquer forma.
+  </p>
+
+  <h2>6. CONSEQUÊNCIAS DO INADIMPLEMENTO</h2>
+  <p>
+    Estou ciente de que o não pagamento no prazo estabelecido poderá
+    resultar nas seguintes medidas:
+  </p>
+  <p><strong>a) Medidas cíveis e extrajudiciais:</strong></p>
+  <ul>
+    <li>Protesto do título em cartório;</li>
+    <li>Inscrição do nome em órgãos de proteção ao crédito (Serasa, SPC e outros);</li>
+    <li>
+      Ajuizamento de ação judicial para cobrança da dívida, com incidência
+      de custas processuais, juros moratórios de 1% ao mês, correção
+      monetária pelo IPCA e honorários advocatícios de 20% (vinte por
+      cento) sobre o valor devido.
+    </li>
+  </ul>
+
+  <p style="margin-top:14px;"><strong>b) Possíveis implicações na esfera criminal:</strong></p>
+  <p>
+    O simples inadimplemento (não pagamento) de dívida civil não constitui
+    crime. No entanto, <strong>caso seja constatada conduta fraudulenta</strong>
+    — como a realização do pedido com a intenção prévia de não efetuar o
+    pagamento, uso de dados falsos ou de terceiros, ou qualquer outro
+    artifício para obter vantagem ilícita — tal conduta poderá configurar:
+  </p>
+  <ul>
+    <li>
+      <strong>Estelionato</strong> (art. 171 do Código Penal) – obter
+      vantagem ilícita, em prejuízo alheio, induzindo ou mantendo alguém em
+      erro, mediante artifício ou ardil. Pena: reclusão de 1 a 5 anos, e
+      multa;
+    </li>
+    <li>
+      <strong>Falsidade ideológica</strong> (art. 299 do Código Penal) –
+      inserir informação falsa em documento com o fim de prejudicar direito
+      ou criar obrigação. Pena: reclusão de 1 a 3 anos, e multa.
+    </li>
+  </ul>
+
+  <h2>7. FORMA DE ACEITE</h2>
+  <p>
+    O presente termo é enviado por meio digital e o aceite é formalizado
+    mediante <strong>manifestação expressa e inequívoca do(a) declarante via
+    mensagem de WhatsApp</strong>, declarando ter lido, compreendido e
+    concordado integralmente com os termos aqui dispostos. O aceite digital
+    possui validade jurídica nos termos do art. 107 e art. 104 do Código
+    Civil, do Marco Civil da Internet (Lei nº 12.965/2014) e da Medida
+    Provisória nº 2.200-2/2001.
+  </p>
+  <p>
+    O registro da conversa de WhatsApp contendo o aceite será arquivado pela
+    VERDILABS como prova documental para todos os fins de direito.
+  </p>
+
+  <h2>8. DISPOSIÇÕES FINAIS</h2>
+  <p>
+    O presente termo constitui <strong>documento probatório de
+    reconhecimento de dívida</strong>, servindo como instrumento para
+    fundamentar eventuais medidas judiciais e extrajudiciais de cobrança.
+    Fica eleito o foro da Comarca de Paraibuna/SP para dirimir quaisquer
+    questões oriundas deste instrumento.
+  </p>
+
+  <p style="margin-top:22px;"><strong>Data de emissão:</strong> {{data_emissao}}</p>
+
+  <p class="aceite-linha">
+    Aceite registrado via WhatsApp pelo(a) declarante acima identificado(a).
+  </p>
+
+  <hr class="separador">
+
+  <div class="referencias">
+    <p><strong>Referências legais:</strong></p>
+    <p>
+      <strong>Art. 171 do CP (Estelionato):</strong> Obter, para si ou para
+      outrem, vantagem ilícita, em prejuízo alheio, induzindo ou mantendo
+      alguém em erro, mediante artifício, ardil ou qualquer outro meio
+      fraudulento. Pena: reclusão, de 1 a 5 anos, e multa.
+    </p>
+    <p>
+      <strong>Art. 299 do CP (Falsidade Ideológica):</strong> Omitir, em
+      documento público ou particular, declaração que dele devia constar, ou
+      nele inserir ou fazer inserir declaração falsa ou diversa da que devia
+      ser escrita. Pena: reclusão, de 1 a 3 anos, e multa.
+    </p>
+    <p>
+      <strong>Arts. 521 a 528 do CC:</strong> Regulam a venda com reserva de
+      domínio, pela qual o vendedor mantém a propriedade do bem até o
+      pagamento integral do preço.
+    </p>
+  </div>
+
+  <div class="footer-brand">
+    VERDILABS COMÉRCIO E DISTRIBUIÇÃO DE SUPLEMENTOS E COSMÉTICOS LTDA &nbsp;|&nbsp;
+    CNPJ: 65.653.378/0001-30<br>
+    PC MAJ. MARCELINO AMÂNCIO DE MOURA, nº 23, Centro, Paraibuna - SP, CEP 12.260-015<br>
+    Autocuidado com padrão profissional.
+  </div>
+
+</body>
+</html>
