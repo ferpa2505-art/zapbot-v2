@@ -1,6 +1,16 @@
 /**
  * ZapBot v2.0 — Processo principal Electron
  */
+
+// ── Proteção contra crash por EPIPE (broken pipe) ──────────────────
+// Evita que o app inteiro derrube quando o Node tenta escrever no
+// console (console.log/warn/error) e o pipe de saída já foi fechado
+// (ex: terminal fechado, redirecionamento de saída interrompido).
+// Sem isso, uma escrita síncrona no stdout/stderr nesse cenário sobe
+// como exceção não tratada no processo principal e mata o Electron.
+process.stdout.on('error', (err) => { if (err && err.code === 'EPIPE') return })
+process.stderr.on('error', (err) => { if (err && err.code === 'EPIPE') return })
+
 const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs   = require('fs')
@@ -8,7 +18,7 @@ const fs   = require('fs')
 let mainWindow, botProcess = null
 
 const DATA_PATH    = app.getPath('userData')
-const CONFIG_PATH  = path.join(DATA_PATH, 'config.json')
+const CONFIG_PATH = path.join(DATA_PATH, 'config.json')
 const SESSION_PATH = path.join(DATA_PATH, 'session')
 
 function defaultConfig() {
@@ -18,13 +28,13 @@ function defaultConfig() {
       horarioFer:'', horariosDias:{}, feriadoComportamento:'seguir_horario', feriadoMsg:''
     },
     mensagens: {
-      boasVindas:   'Olá! 👋 Bem-vindo(a) a {nome}. Como posso ajudar?\n\n1️⃣ Agendar\n2️⃣ Cancelar\n3️⃣ Informações\n4️⃣ Falar com atendente',
-      confirmacao:  '✅ Agendado!\n📅 {data} às {hora}\n📍 {endereco}',
+      boasVindas: 'Olá! 👋 Bem-vindo(a) a {nome}. Como posso ajudar?\n\n1️⃣ Agendar\n2️⃣ Cancelar\n3️⃣ Informações\n4️⃣ Falar com atendente',
+      confirmacao: '✅ Agendado!\n🗓️ {data} às {hora}\n📍 {endereco}',
       foradeHorario:'Olá! Nosso horário é {horario}. Posso agendar mesmo assim!',
       cancelamento: 'Cancelamento confirmado. Quando quiser remarcar, é só chamar! 😊',
-      escalada:     'Vou conectar você com um atendente. Aguarde um momento... ⏳'
+      escalada: 'Vou conectar você com um atendente. Aguarde um momento... 🙋'
     },
-    menu:    { agendar:true, cancelar:true, informacoes:true, escalada:true },
+    menu: { agendar:true, cancelar:true, informacoes:true, escalada:true },
     horarios:{ responderForaHorario:true, modoFull24h:false, escalarParaHumano:true },
     posAtendimento: {
       pesquisaSatisfacao:true, pesquisaApos:'2h',
@@ -68,12 +78,12 @@ app.whenReady().then(createWindow)
 app.on('window-all-closed', ()=>{ if(process.platform!=='darwin') app.quit() })
 app.on('activate', ()=>{ if(BrowserWindow.getAllWindows().length===0) createWindow() })
 
-// ── IPC Handlers ──────────────────────────────────────────────────────────────
-ipcMain.handle('load-config',   ()      => loadConfig())
-ipcMain.handle('save-config',   (_, c)  => { saveConfig(c); return true })
-ipcMain.handle('get-data-path', ()      => DATA_PATH)
-ipcMain.handle('open-external', (_, u)  => shell.openExternal(u))
-ipcMain.handle('clear-session', ()      => { if(fs.existsSync(SESSION_PATH)) fs.rmSync(SESSION_PATH,{recursive:true}); return true })
+// ── IPC Handlers ──────────────────
+ipcMain.handle('load-config',   ()       => loadConfig())
+ipcMain.handle('save-config',   (_, c)   => { saveConfig(c); return true })
+ipcMain.handle('get-data-path', ()       => DATA_PATH)
+ipcMain.handle('open-external', (_, u)   => shell.openExternal(u))
+ipcMain.handle('clear-session', ()       => { if(fs.existsSync(SESSION_PATH)) fs.rmSync(SESSION_PATH,{recursive:true}); return true })
 
 ipcMain.handle('buscar-feriados', async (_, cidade) => {
   try { const { getFeriados } = require('./feriados'); return await getFeriados(DATA_PATH).listarTodos(cidade) }

@@ -209,7 +209,7 @@ async function executarAcao(sock, jid, acaoObj, opcoes = {}) {
       await sock.sendMessage(jid, { text: 'Em breve, nosso time vai te enviar o agendamento com todas as informações 💚' })
       await notificarHumano(sock, canalInternoJid, {
         jidCliente: jid,
-        motivo: '✅ Cliente ACEITOU o termo — precisa agendar a entrega!',
+        motivo: '🚨 *URGENTE* — ACEITE OK, GERAR AGENDAMENTO',
         mensagemCliente: JSON.stringify(acaoObj.dados_coletados || {})
       })
       break
@@ -246,7 +246,7 @@ async function executarAcao(sock, jid, acaoObj, opcoes = {}) {
           await sock.sendMessage(jid, { text: 'Depois de ler, me confirme por favor: de acordo com o termo, posso enviar o seu pedido?' })
           await notificarHumano(sock, canalInternoJid, {
             jidCliente: jid,
-            motivo: '📄 Termo gerado e enviado automaticamente pro WhatsApp da cliente',
+            motivo: '📄 TERMO GERADO, FALTA ACEITE',
             mensagemCliente: JSON.stringify(acaoObj.dados_coletados || {})
           })
         } catch (e) {
@@ -281,12 +281,12 @@ async function executarAcao(sock, jid, acaoObj, opcoes = {}) {
     }
 
     case 'escalar_humano': {
+      // Mantém a resposta normal pra cliente, mas não notifica mais o WhatsApp interno
+      // pra esse tipo de escalada genérica (era ruído — disparava com frequência sem
+      // necessidade real de ação, ex: quando a cliente só disse que ia "confirmar com
+      // a equipe dela e retornar"). Se sentir falta de avisos de escalada legítimos em
+      // outro momento específico da conversa, me avise que ajustamos de novo.
       if (texto) await enviarTextoEmPartes(sock, jid, texto)
-      await notificarHumano(sock, canalInternoJid, {
-        jidCliente: jid,
-        motivo: acaoObj.pergunta_nao_mapeada || 'Escalado pelo cérebro Venaliv',
-        mensagemCliente: texto || ''
-      })
       break
     }
 

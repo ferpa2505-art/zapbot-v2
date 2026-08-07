@@ -15,6 +15,7 @@ const { getBroadcast }         = require('./broadcast')
 const { ServidorWeb }          = require('./servidor-web')
 const { getLicenca }           = require('./licenca')
 const { ServicoVoz }           = require('./voz')
+const { ServicoTranscricao }   = require('./transcricao')
 const { AnalisadorIA }         = require('./ia-analise')
 const {
   defaultPersonalidade, dentroDoHorarioChat,
@@ -25,6 +26,8 @@ const venalivAcoes  = require('./venaliv-acoes')
 const conversas      = require('./conversas')
 const backupEmail    = require('./backup-email')
 const pausas         = require('./pausas')
+const lembretes      = require('./lembretes')
+const retomada       = require('./retomada')
 
 const logger = pino({ level: 'silent' })
 
@@ -33,6 +36,10 @@ const logger = pino({ level: 'silent' })
 // da interface reescreve o config.json inteiro ao salvar, e pode apagar campos que ela
 // não conhece — isso já aconteceu e desativou o roteiro Venaliv sem aviso nenhum.
 const MODO_VENALIV_FIXO = true
+
+// Mensagem usada quando o cliente manda áudio e a transcrição (Whisper) ainda não está
+// configurada (sem chave da OpenAI em config.chaveOpenAI / pers.chaveOpenAI / env).
+const MSG_AUDIO_SEM_TRANSCRICAO = 'Recebi seu áudio! Só que nesse momento ainda não consigo ouvi-lo — se puder me mandar por texto, te respondo rapidinho 🙂'
 
 const SEGMENTOS = {
   medico:'medico', dentista:'dentista', advogado:'advogado', psico:'psico',
@@ -305,6 +312,10 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
   const agenda    = getAgenda(dataPath)
   const broadcast = getBroadcast(dataPath)
   const vozSvc    = new ServicoVoz(pers.chaveGoogleTTS || config.chaveGoogleTTS || '')
+  // Chave da OpenAI (Whisper) — ainda sem campo próprio na interface; por enquanto,
+  // adicione manualmente em config.json como "chaveOpenAI": "sk-..." (ou defina a
+  // variável de ambiente OPENAI_API_KEY). Sem chave, o bot volta ao aviso de fallback.
+  const transcricaoSvc = new ServicoTranscricao(pers.chaveOpenAI || config.chaveOpenAI || process.env.OPENAI_API_KEY || '')
   const ia        = new AnalisadorIA(pers.chaveClaudeAPI || config.chaveClaudeAPI || process.env.ANTHROPIC_API_KEY || '')
 
   backupEmail.iniciarAgendamento(dataPath, config.backup, (resultado) => {
@@ -353,15 +364,20 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
 
   sock.ev.on('creds.update', saveCreds)
 
+  // Handle da automação de retomada — iniciada quando a conexão abre, parada em stop().
+  let retomadaHandle = null
+
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) { const url = await QRCode.toDataURL(qr, { width: 256, margin: 1 }); onQR(url) }
     if (connection === 'open') {
       const num = sock.user?.id?.split(':')[0] || ''
       web.atualizar({ status: 'online', numero: num })
       onReady(num)
+      if (!retomadaHandle) retomadaHandle = retomada.iniciar(sock, dataPath, 6)
     }
     if (connection === 'close') {
       web.atualizar({ status: 'offline' })
+      if (retomadaHandle) { retomadaHandle.parar(); retomadaHandle = null }
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode
       if (code !== DisconnectReason.loggedOut) {
         setTimeout(() => startBot({ sessionPath, dataPath, config, onQR, onReady, onMessage, onDisconnect, onWebInfo, onLicenca }), 3000)
@@ -378,6 +394,26 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
       enfileirarPorJid(jid, () => processarMensagemRecebida(msg, jid))
     }
   })
+
+  // Baixa e transcreve um áudio recebido. Retorna string vazia em caso de falha,
+  // ou null se a transcrição não está configurada (sem chave da OpenAI).
+  async function transcreverAudioRecebido(msg) {
+    if (!transcricaoSvc.temApiKey()) return null
+    try {
+      const bufferAudio = await downloadMediaMessage(msg, 'buffer', {})
+      const textoTranscrito = await transcricaoSvc.transcrever(bufferAudio)
+      return textoTranscrito || ''
+    } catch (e) {
+      console.error('[transcricao] falha ao transcrever áudio:', e.message)
+      return ''
+    }
+  }
+
+  // Mesmo canal interno usado pelas ações do Venaliv (notificação de negócio, prioridade
+  // sobre o número avulso de notif.ativo — segue a mesma regra já usada mais abaixo).
+  function jidCanalInterno() {
+    return pers?.notificacao?.ativo ? numeroParaJid(pers.notificacao.numero) : (config.venaliv?.canalInternoJid || '')
+  }
 
   async function processarMensagemRecebida(msg, jid) {
       try {
@@ -431,10 +467,33 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
           return
         }
         if (tipoMsg === 'audio') {
-          await sock.sendMessage(jid, { text: 'Recebi seu áudio, mas por enquanto só consigo entender por texto — pode escrever a mesma coisa por aqui? 🙂' })
-          return
+          const textoTranscrito = await transcreverAudioRecebido(msg)
+          if (textoTranscrito === null) {
+            // Whisper não configurado (sem chave da OpenAI) — mantém aviso de fallback
+            // pra cliente e avisa a equipe pelo WhatsApp interno, já que o bot não vai
+            // conseguir seguir o atendimento sozinho a partir desse ponto.
+            await sock.sendMessage(jid, { text: MSG_AUDIO_SEM_TRANSCRICAO })
+            const canal = jidCanalInterno()
+            if (canal) {
+              try {
+                await sock.sendMessage(canal, {
+                  text: `🎤 *Cliente mandou áudio* — ${jid}\n\nAinda não consigo transcrever (transcrição não configurada) — pode precisar de atenção manual.`
+                })
+              } catch (e) { console.error('[venaliv] Falha ao notificar canal interno sobre áudio:', e.message) }
+            }
+            return
+          }
+          if (!textoTranscrito.trim()) {
+            await sock.sendMessage(jid, { text: 'Não consegui entender direito o áudio 😅 pode tentar de novo ou escrever?' })
+            return
+          }
+          texto = textoTranscrito
         }
         if (!texto.trim()) return
+
+        // Cliente respondeu de verdade — zera a contagem de tentativas de retomada,
+        // já que ela voltou a interagir por conta própria.
+        lembretes.resetar(dataPath, jid)
 
         const historicoAnterior = conversas.obter(dataPath, jid)
           .map(m => ({ role: m.role, content: m.texto }))
@@ -478,7 +537,11 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
         const descricaoAcao = [acaoObj.texto, marcadorMidia].filter(Boolean).join(' ') || `[Ação: ${acaoObj.acao}]`
         conversas.adicionar(dataPath, jid, 'assistant', descricaoAcao)
 
-        const jidNotif = pers?.notificacao?.ativo ? numeroParaJid(pers.notificacao.numero) : (config.venaliv?.canalInternoJid || '')
+        // Negócio fechado (aceite confirmado) — a automação de retomada para de
+        // tentar reengajar essa cliente, não faz mais sentido cutucar quem já comprou.
+        if (acaoObj.acao === 'termo_aceito') lembretes.marcarFechado(dataPath, jid)
+
+        const jidNotif = jidCanalInterno()
         // gerar_termo/enviar_termo agora são automáticos (geram e mandam o PDF de verdade a cada chamada —
         // inclusive quando o cliente corrige um dado e pede reenvio). Só enviar_checkout_pagamento
         // continua sendo escalado/manual, então só ele entra na trava de "já notificado, não repete".
@@ -500,7 +563,18 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
         return
       }
 
-      if (tipoMsg === 'audio') { await sock.sendMessage(jid, { text: 'Recebi seu áudio! No momento respondo por texto. Pode digitar sua mensagem?' }); return }
+      if (tipoMsg === 'audio') {
+        const textoTranscrito = await transcreverAudioRecebido(msg)
+        if (textoTranscrito === null) {
+          await sock.sendMessage(jid, { text: MSG_AUDIO_SEM_TRANSCRICAO })
+          return
+        }
+        if (!textoTranscrito.trim()) {
+          await sock.sendMessage(jid, { text: 'Não consegui entender direito o áudio 😅 pode tentar de novo ou escrever?' })
+          return
+        }
+        texto = textoTranscrito
+      }
       if (!texto.trim()) return
 
       conversas.adicionar(dataPath, jid, 'user', texto)
@@ -516,8 +590,11 @@ async function startBot({ sessionPath, dataPath, config, onQR, onReady, onMessag
   }
 
   return {
-    sock, web, agenda, broadcast, gerenciador, licenca, vozSvc, ia,
-    stop: async () => { backupEmail.pararAgendamento(); web.parar(); await sock.logout().catch(() => {}); sock.end() }
+    sock, web, agenda, broadcast, gerenciador, licenca, vozSvc, ia, transcricaoSvc,
+    stop: async () => {
+      if (retomadaHandle) { retomadaHandle.parar(); retomadaHandle = null }
+      backupEmail.pararAgendamento(); web.parar(); await sock.logout().catch(() => {}); sock.end()
+    }
   }
 }
 
